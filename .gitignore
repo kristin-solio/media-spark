@@ -1,0 +1,17 @@
+# Environment
+.env
+venv/
+
+# Runtime data
+mentions.db
+brand_cache.json
+cron.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.vscode/
+.idea/
