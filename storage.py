@@ -36,8 +36,40 @@ def init_db() -> None:
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS run_log (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                run_at     TEXT    NOT NULL,
+                mentions_found INTEGER NOT NULL DEFAULT 0
+            )
+            """
+        )
         conn.commit()
         logger.info("Database initialized at %s", DB_PATH)
+    finally:
+        conn.close()
+
+
+def is_first_run() -> bool:
+    """Return True if no successful run has been recorded yet."""
+    conn = _connect()
+    try:
+        row = conn.execute("SELECT 1 FROM run_log LIMIT 1").fetchone()
+        return row is None
+    finally:
+        conn.close()
+
+
+def record_run(mentions_found: int) -> None:
+    """Log a completed run so future runs know this isn't the first."""
+    conn = _connect()
+    try:
+        conn.execute(
+            "INSERT INTO run_log (run_at, mentions_found) VALUES (?, ?)",
+            (datetime.now(timezone.utc).isoformat(), mentions_found),
+        )
+        conn.commit()
     finally:
         conn.close()
 

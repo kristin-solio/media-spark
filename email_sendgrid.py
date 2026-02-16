@@ -23,7 +23,11 @@ def _build_html(mentions: list[dict]) -> str:
     parts.append(f"<h2>{BRAND_NAME} – Daily Mention Digest ({today})</h2>")
 
     if not mentions:
-        parts.append("<p>No new mentions found today.</p>")
+        parts.append(
+            "<p>No new mentions found in the last 24 hours. "
+            "We searched Reddit (including r/Omaha and r/Nebraska), Nextdoor, "
+            "and general web sources. We'll check again tomorrow.</p>"
+        )
         return "\n".join(parts)
 
     parts.append(f"<p><strong>{len(mentions)} new mention(s)</strong> discovered.</p><hr>")

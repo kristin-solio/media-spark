@@ -20,7 +20,7 @@ from brand_scrape import get_brand_context       # noqa: E402
 from draft_reply_claude import draft_replies      # noqa: E402
 from email_sendgrid import send_digest            # noqa: E402
 from search_serper import discover_mentions       # noqa: E402
-from storage import init_db                       # noqa: E402
+from storage import init_db, is_first_run, record_run  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,
@@ -42,8 +42,14 @@ def run() -> None:
     logger.info("Brand context ready (%d chars)", len(brand_context))
 
     # 3. Discover new mentions via Serper
-    logger.info("Step 2/4: Searching for new mentions…")
-    new_mentions = discover_mentions()
+    #    First run → search last 90 days (backfill).
+    #    Subsequent runs → search last 24 hours only.
+    first = is_first_run()
+    if first:
+        logger.info("Step 2/4: First run detected – searching last 90 days…")
+    else:
+        logger.info("Step 2/4: Searching for new mentions (last 24 hours)…")
+    new_mentions = discover_mentions(first_run=first)
 
     # 4. Draft replies for new mentions only (keeps Claude costs minimal)
     enriched: list[dict] = []
@@ -56,6 +62,9 @@ def run() -> None:
     # 5. Send the daily digest email
     logger.info("Step 4/4: Sending daily digest email…")
     ok = send_digest(enriched)
+
+    # 6. Record this run so the next one uses the 24-hour window
+    record_run(mentions_found=len(new_mentions))
 
     if ok:
         logger.info("=== Run complete – email sent successfully ===")
